@@ -35,6 +35,7 @@ class Conv(nn.Module):
         """Initialize Conv layer with given arguments including activation."""
         super().__init__()
         self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p, d), groups=g, dilation=d, bias=False)
+        norm_cfg=dict(type='LN2d', eps=1e-6)
         self.bn = build_norm_layer(norm_cfg, c2)
         self.act = self.default_act if act is True else act if isinstance(act, nn.Module) else nn.Identity()
 
@@ -50,6 +51,7 @@ class DWTConv(nn.Module):
     def __init__(self, in_ch, out_ch, norm_cfg=dict(type='BN2d')):
         super(DWTConv, self).__init__()
         self.wt = DWTForward(J=1, mode='zero', wave='haar')
+        norm_cfg=dict(type='LN2d', eps=1e-6)
         self.conv_bn_relu = nn.Sequential(
             nn.Conv2d(in_ch * 2, out_ch, kernel_size=1, stride=1),
             build_norm_layer(norm_cfg, out_ch),
@@ -71,6 +73,7 @@ class PTConv(nn.Module):
         self.conv2 = nn.Conv2d(in_dim//2, out_dim//2, kernel_size=k, stride=s, padding=p, dilation=d, bias=False)
         self.nwa = nwa
         if nwa:
+            norm_cfg=dict(type='LN2d', eps=1e-6)
             self.norm = build_norm_layer(norm_cfg, out_dim)
             self.act = nn.SiLU()
         
@@ -88,6 +91,7 @@ class SPDConv(nn.Module):
     # Changing the dimension of the Tensor
     def __init__(self, inc, ouc, norm_cfg=dict(type='BN2d')):
         super().__init__()
+        norm_cfg=dict(type='LN2d', eps=1e-6)
         self.conv = Conv(inc * 4, ouc, act=nn.ReLU(inplace=True), k=3, s=1, p=1, norm_cfg=norm_cfg)
 
     def forward(self, x):
@@ -106,6 +110,7 @@ class FMBFD(nn.Module):
     """
     def __init__(self, in_channels=3, out_channels=16, norm_cfg=dict(type='BN2d')):
         super().__init__()
+        norm_cfg=dict(type='LN2d', eps=1e-6)
         self.proj_first = Conv(in_channels, out_channels//2, k=3, s=1, p=1, norm_cfg=norm_cfg)
         self.conv1 = SPDConv(in_channels, out_channels//2, norm_cfg=norm_cfg)
         self.conv2 = Conv(out_channels//2, out_channels//2, k=3, s=2, p=1, g=out_channels//2, norm_cfg=norm_cfg)
@@ -131,6 +136,7 @@ class MBFD(nn.Module):
     """
     def __init__(self, in_channels, out_channels, norm_cfg=dict(type='BN2d')):
         super().__init__()
+        norm_cfg=dict(type='LN2d', eps=1e-6)
         self.proj_first = Conv(in_channels, out_channels, k=3, s=1, p=1, g=math.gcd(in_channels, out_channels), norm_cfg=norm_cfg)
         self.conv1 = Conv(out_channels, out_channels//2, k=3, s=2, p=1, g=out_channels//2, norm_cfg=norm_cfg)
         self.conv2 = PTConv(out_channels, out_channels, k=3, s=2, p=1, norm_cfg=norm_cfg)
